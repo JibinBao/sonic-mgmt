@@ -518,7 +518,7 @@ def ensure_all_critical_processes_running(duthost, containers_in_namespaces):
                     ensure_process_is_running(duthost, container_name_in_namespace, program_name)
 
 
-def test_monitoring_critical_processes(duthosts, rand_one_dut_hostname, tbinfo):
+def test_monitoring_critical_processes(duthosts, rand_one_dut_hostname, tbinfo, skip_vendor_specific_container):
     """Tests the feature of monitoring critical processes by Monit and Supervisord.
 
     This function will check whether names of critical processes will appear
@@ -548,6 +548,7 @@ def test_monitoring_critical_processes(duthosts, rand_one_dut_hostname, tbinfo):
     # Skip 'acms' container since 'acms' process is not running on lab devices and
     # another process `cert_converter.py' is set to auto-restart if exited.
     skip_containers.append("acms")
+    skip_containers = skip_containers + skip_vendor_specific_container
     # Skip 'radv' container on devices whose role is not T0.
     if tbinfo["topo"]["type"] != "t0":
         skip_containers.append("radv")
