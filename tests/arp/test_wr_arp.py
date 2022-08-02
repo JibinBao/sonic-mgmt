@@ -8,6 +8,7 @@ from tests.common.fixtures.ptfhost_utils import change_mac_addresses            
 from tests.common.fixtures.ptfhost_utils import remove_ip_addresses                                 # lgtm[py/unused-import]
 from tests.common.storage_backend.backend_utils import skip_test_module_over_backend_topologies     # lgtm[py/unused-import]
 from tests.ptf_runner import ptf_runner
+from tests.common.utilities import wait_until
 
 
 logger = logging.getLogger(__name__)
@@ -94,17 +95,24 @@ class TestWrArp:
             (except the one for the deafult route) and take host IP from the subnet IP. For the output
             above 192.168.8.0/25 subnet will be taken and host IP given to ferret script will be 192.168.8.1
         '''
-        result = duthost.shell(
-            cmd='''ip route show type unicast |
-            sed -e '/proto 186\|proto zebra\|proto bgp/!d' -e '/default/d' -ne '/0\//p' |
-            head -n 1 |
-            sed -ne 's/0\/.*$/1/p'
-            '''
-        )
+        res = {}
 
-        pytest_assert(len(result['stdout'].strip()) > 0, 'Empty DIP returned')
+        def get_dip(duthost):
 
-        dip = result['stdout']
+            result = duthost.shell(
+                cmd='''ip route show type unicast |
+                        sed -e '/proto 186\|proto zebra\|proto bgp/!d' -e '/default/d' -ne '/0\//p' |
+                        head -n 1 |
+                        sed -ne 's/0\/.*$/1/p'
+                        '''
+            )
+            res["dip"] = result['stdout'] if len(result['stdout'].strip()) > 0 else ""
+
+            return res["dip"]
+
+        pytest_assert(wait_until(100, 10, 0, get_dip, duthost), 'Empty DIP returned')
+
+        dip = res['dip']
         logger.info('VxLan Sender {0}'.format(dip))
 
 
