@@ -82,3 +82,15 @@ _user parameters:_
 
 **logs_since** - number of minutes to pass to 'show techsupport' command.
 If nothing specified, a random number of minutes will be raffled between 1 and 60.
+
+
+### Test - test_techsupport_on_dpu (This case is running only on dpu, for other switch it will be skipped)
+
+#### Test Objectives
+
+- Generate dump file by " show techsupport -r --since 'xx xxx xxx' " ( select 1-5 minutes ago randomly)
+- Validate that the dump file contains platform-dump.tar.gz archive
+- Validate that platform-dump.tar.gz includes the following files:
+      sysfs_tree, sys_version, dmesg, dmidecode, lsmod, lspci, top, bin/platform-dump.sh
+- Validate that the dump file contains sai_sdk_dump folder
+- Validate that sai_sdk_dump is not empty folder
