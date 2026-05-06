@@ -38,6 +38,14 @@ logger = logging.getLogger(__name__)
 
 GRPCURL_VERSION = "1.9.3"
 
+
+def _format_target(host, port):
+    """Format host:port, wrapping IPv6 addresses in square brackets."""
+    if ':' in str(host):
+        return f"[{host}]:{port}"
+    return f"{host}:{port}"
+
+
 # Architecture mapping: dpkg --print-architecture → grpcurl release suffix
 _GRPCURL_ARCH_MAP = {
     "amd64": "linux_x86_64",
@@ -231,7 +239,7 @@ def gnmi_tls(request, duthost, ptfhost):
         # Build coupled client with the exact config we just set up
         host = duthost.mgmt_ip
         port = grpc_config.DEFAULT_TLS_PORT
-        target = f"{host}:{port}"
+        target = _format_target(host, port)
 
         ptf_cert_paths = grpc_config.get_ptf_cert_paths()
         cert_paths = CertPaths(
@@ -314,7 +322,7 @@ def gnmi_plaintext(duthost, ptfhost):
     """
     host = duthost.mgmt_ip
     port = grpc_config.DEFAULT_PLAINTEXT_PORT
-    target = f"{host}:{port}"
+    target = _format_target(host, port)
 
     client = PtfGrpc(ptfhost, target, plaintext=True)
     gnoi_client = PtfGnoi(client)
@@ -508,8 +516,9 @@ def _verify_gnoi_tls_connectivity(duthost, ptfhost):
 
     # Test basic gRPC service listing with TLS
     cacert_arg, cert_arg, key_arg = grpc_config.get_grpcurl_cert_args()
+    grpc_target = _format_target(duthost.mgmt_ip, grpc_config.DEFAULT_TLS_PORT)
     test_cmd = f"""grpcurl {cacert_arg} {cert_arg} {key_arg} \
-                         {duthost.mgmt_ip}:{grpc_config.DEFAULT_TLS_PORT} list"""
+                         {grpc_target} list"""
 
     result = ptfhost.shell(test_cmd, module_ignore_errors=True)
 
@@ -521,7 +530,7 @@ def _verify_gnoi_tls_connectivity(duthost, ptfhost):
 
     # Test basic gNOI call
     time_cmd = f"""grpcurl {cacert_arg} {cert_arg} {key_arg} \
-                         {duthost.mgmt_ip}:{grpc_config.DEFAULT_TLS_PORT} gnoi.system.System.Time"""
+                         {grpc_target} gnoi.system.System.Time"""
 
     result = ptfhost.shell(time_cmd, module_ignore_errors=True)
 
